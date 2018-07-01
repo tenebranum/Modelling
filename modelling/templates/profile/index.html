@@ -1,0 +1,351 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/bootstrap/3.3.0/css/bootstrap.min.css">
+    <title>Моделирование</title>
+  </head>
+
+  <body>
+
+    <main class="main-container">
+            <div class="col-lg-6">
+                <img src="{% static 'pechka.png' %}" alt="display" style="width: 800px; height: 400px;">
+                {% csrf_token %}
+            </div>
+            <div class="col-lg-3">
+
+                <button class="step btn btn-info" style="width: 63.5px; height: 30px;" data-action='minus' type="submit"><--</button>
+                <label id="label_value" id="center" >Расход газа:<br/><span data-hold="false" data-stop='false' id='value'>{{ step }}</span> м3/час</label>
+                <button class="step  btn btn-danger" style="margin-left: 10px; width: 63.5px; height: 30px;" data-action='plus' type="submit">--></button>
+                <button id="step_alter" class="btn btn-success" style="width: 250px; height: 50px;" data-url="{% url 'alter_step' %}" type="submit">Установить расход газа</button>
+                <br/>
+                <button class="step_air btn btn-info" style="width: 63px; height: 30px;" data-action='minus' type="submit"><--</button>
+
+                <label id="label_value" >Расход воздуха:<br/><span data-hold="false" data-stop='false' id='value_air'> {{ step_air }} </span> м3/час</label>
+                <button class="step_air  btn btn-danger" style="width: 63px; height: 30px;" data-action='plus' type="submit">-></button>
+                <button id="step_air_alter" class="btn btn-success" style="width: 250px; height: 50px;" data-url="{% url 'alter_step_air' %}" type="submit">Установить расход воздуха</button>
+            </div>
+            <div class="col-lg-1">
+            	<input type="text" class="form-control" style="width: 270px; text-align: center;" value="1250" name="model_temp" id="model_temp">
+                <button id="model_temp_btn" class="btn btn-success" style="width: 270px; height: 50px;" data-url="{% url 'alter_model_temp' %}" type="submit">Задание температуры томильной зоны</button>
+                <button id="stop" class="btn btn-alert" style="width: 270px; height: 50px;" data-url="{% url 'alter_step' %}" type="submit">Остановка</button>
+                <input type="text" value="{{ delta }}" id="delta" hidden>
+            </div>
+           <!-- 
+            <div class="col-sm-1">
+                <label id="label_value"><span data-hold="false" data-stop='false' id='value'>d^2y/dt^2</label>
+                <input type="number" onchange="matrix_changed()" class="form-control" style="text-align: center;" value="4" name="y2" id="y2">
+                <label id="label_value"><span data-hold="false" data-stop='false' id='value'>dy/dt</label>
+                <input type="number" onchange="matrix_changed()" class="form-control" style="text-align: center;" value="2" name="y1" id="y1">
+                <label id="label_value"><span data-hold="false" data-stop='false' id='value'>y</label>
+                <input type="number" onchange="matrix_changed()" class="form-control" style="text-align: center;" value="1" name="y" id="y">
+                <label id="label_value"><span data-hold="false" data-stop='false' id='value'>dU/dt</label>
+                <input type="number" onchange="matrix_changed()" class="form-control" style="text-align: center;" value="0" name="u1" id="u1">
+                <label id="label_value"><span data-hold="false" data-stop='false' id='value'>U</label>
+                <input type="number" onchange="matrix_changed()" class="form-control" style="text-align: center;" value="3" name="u" id="u">
+            </div>
+            {% csrf_token %}
+            <div class="col-sm-3" style="left: 75%; top: 10%; position: absolute;">
+                <button id="run" onclick="state_space()" data-url="{% url 'state_space' %}" class="btn btn-success" type="submit">Запустить</button>
+            </div>-->
+
+            <div class="col-lg-12">
+                <div class="card-body">
+                    <canvas id="chart-line-4" height="70" data-time="-1" data-url="{% url 'sq_integr' %}" data-provide="chartjs"></canvas>
+                </div>
+            </div>
+    </main>
+
+    <!-- Scripts -->
+
+    <script src="{% static 'assets/js/core.min.js' %}"></script>
+    <script src="{% static 'assets/js/app.min.js' %}"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="https://cdn.jsdelivr.net/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <script>
+        function matrix_changed(){
+            if($('#y2').val() == 0){
+                $('#u1').val(0);
+            }
+            if($('#y2').val() && $('#y1').val() && $('#y').val() && $('#u1').val() && $('#u').val()){
+                $('#run').prop('disabled', false);
+            }
+            else{
+                $('#run').prop('disabled', true);
+            }
+        }
+
+        function state_space(){
+            var btn = $('#run');
+            console.log(btn.data('url'));
+            $.ajax(btn.data('url'),{
+                'type':'POST',
+                'async':true,
+                'data':{
+                    'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'y2':$('#y2').val(),
+                    'y1':$('#y1').val(),
+                    'y':$('#y').val(),
+                    'u1':$('#u1').val(),
+                    'u':$('#u').val(),
+                },
+                'success':function(data,status,xhr){
+                    console.log(123444);
+                    var x = data['x']; //.toFixed(2);
+                    var y = data['y'];
+                    chart.data.labels = x;
+                    chart.data.datasets[0].data = y;
+                    chart.update();
+                },
+                'error':function(xhr,status,error){
+                }
+            });
+        }
+    </script>
+	<script>
+    var chart;
+	app.ready(function() {
+        window.chart = new Chart($("#chart-line-4"), {
+        type: 'line',
+    // Data
+    //
+        data: {
+            labels: ['0'],
+            datasets: [
+            {
+                label: "h1(t)",
+                fill: false,
+                borderWidth: 2,
+                pointRadius: 0.5,
+                borderColor: "#36a2eb",
+                backgroundColor: "#36a2eb",
+                pointBackgroundColor: "#36a2eb",
+                pointBorderColor: "#36a2eb",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "#36a2eb",
+                data: [0]
+            },
+            {
+                label: "h0(t)",
+                fill: false,
+                borderWidth: 2,
+                pointRadius: 0.5,
+                borderColor: "#000000",
+                backgroundColor: "#000000",
+                pointBackgroundColor: "#000000",
+                pointBorderColor: "#000000",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "#000000",
+                data: [0]
+            }]
+        },
+    // Options
+    //
+        options: {
+            legend: {
+                display: true,
+                labels: {
+                usePointStyle: true
+                }
+            }}
+        });
+        chart_generate();
+        });
+    </script>
+    <script>
+    function chart_generate() {
+        var chart_line = $('#chart-line-4');
+        console.log(chart_line.data('url'));
+        $.ajax(chart_line.data('url'),{
+            'type':'GET',
+            'async':true,
+            'data':{
+                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+            },
+            'success':function(data,status,xhr){
+                var x = data['x']; //.toFixed(2);
+                var y = data['y'];
+                var y0 = data['y0'];
+                console.log(y);
+                chart.data.labels = x;
+                chart.data.datasets[0].data = y;
+                chart.data.datasets[1].data = y0;
+                chart.update();
+                return 0;
+                var step = data['stepregul'];
+                var step_air = data['stepregul_air']
+                $('#value').html(step.toFixed(3));
+                $('#value_air').html(step_air.toFixed(3));
+                chart_line.data('time', x);
+                chart.data.labels.push(x);
+                chart.data.datasets[0].data.push(y);
+                console.log(data['regul']);
+                chart.data.datasets[1].data.push(data['regul']);
+                if (chart.data.labels.length > 50){
+                    chart.data.labels.shift();
+                }
+                if (chart.data.datasets[0].data.length > 50){
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                }
+                chart.update();
+                var delta = parseFloat($('#delta').val());
+                var stop = $('#value').data('stop');
+                if (String(stop) == 'false'){
+                    setTimeout(chart_generate, delta * 1000);
+                }
+            },
+            'error':function(xhr,status,error){
+
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        $('#step_alter').click(function(event){
+            var btn = $(this);
+            var value = $('#value');
+            var chart = $('#chart-line-4');
+            var chart_line = $('#chart-line-4');
+            var rashod = parseInt(value.text());
+            $.ajax(btn.data('url'),{
+                'type':'POST',
+                'async':true,
+                'data':{
+                    'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'value':rashod,
+                    'action':btn.data('action'),
+                    'force_hold':value.data('hold')
+                },
+                'success':function(data,status,xhr){
+                    if (parseInt($('#value').data('value')) == 0){
+                        $('#value').data('hold', 'true');
+                    }
+                    else{
+                        $('#value').data('hold', 'false');
+                    }
+                },
+                'error':function(xhr,status,error){
+                }
+            });
+        })
+    });
+
+
+    $(document).ready(function() {
+        $('#model_temp_btn').click(function(event){
+            var btn = $(this);
+            var value = $('#model_temp').val();
+            $.ajax(btn.data('url'),{
+                'type':'POST',
+                'async':true,
+                'data':{
+                    'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'value':value,
+                },
+                'success':function(data,status,xhr){
+                	console.log(123);
+                },
+                'error':function(xhr,status,error){
+                }
+            });
+        })
+    });
+
+
+    $(document).ready(function() {
+        $('#step_air_alter').click(function(event){
+            var btn = $(this);
+            var value_air = $('#value_air');
+            var chart = $('#chart-line-4');
+            var chart_line = $('#chart-line-4');
+            var rashod_air = parseInt(value_air.text());
+            $.ajax(btn.data('url'),{
+                'type':'POST',
+                'async':true,
+                'data':{
+                    'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'value_air':rashod_air,
+                    'action':btn.data('action'),
+                    'force_hold':value_air.data('hold')
+                },
+                'success':function(data,status,xhr){
+                    if (parseInt($('#value_air').data('value_air')) == 0){
+                        $('#value_air').data('hold', 'true');
+                    }
+                    else{
+                        $('#value_air').data('hold', 'false');
+                    }
+                },
+                'error':function(xhr,status,error){
+                }
+            });
+        })
+    });
+
+    $(document).ready(function() {
+        $('#stop').click(function(event){
+            var value = $('#value');
+            if (String(value.data('stop')) == 'true'){
+                value.data('stop', 'false');
+                $(this).html('Остановка');
+                $(this).removeClass('btn-success');
+                $(this).addClass('btn-alert');
+                chart_generate();
+            }
+            else{
+                value.data('stop', 'true');
+                $(this).html('Пуск');
+                $(this).removeClass('btn-alert');
+                $(this).addClass('btn-success');
+            }
+        })
+
+        $('.step').click(function(event){
+            var btn = $(this);
+            var value = $('#value');
+            var rashod = parseInt(value.text());
+            if ($(this).data('action') == 'minus'){
+                if (rashod > 0){
+                    rashod--;
+                }
+            }
+            else{
+                if (rashod < 100){
+                    rashod++;
+                }
+            }
+            value.html(rashod);
+            value.data('value', rashod);
+            if (rashod != 0 && rashod != 100){
+                value.data('hold', 'false');
+            }
+        })
+
+        $('.step_air').click(function(event){
+        var btn = $(this);
+        var value_air = $('#value_air');
+        var rashod_air = parseInt(value_air.text());
+        if ($(this).data('action') == 'minus'){
+            if (rashod_air > 0){
+                rashod_air--;
+            }
+        }
+        else{
+            if (rashod_air < 100){
+                rashod_air++;
+            }
+        }
+        value_air.html(rashod_air);
+        value_air.data('value', rashod_air);
+        if (rashod_air != 0 && rashod_air != 100){
+            value_air.data('hold', 'false');
+        }
+    })
+});
+    </script>
+  </body>
+</html>
