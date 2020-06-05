@@ -1,6 +1,6 @@
 certifi==2017.11.5
 chardet==3.0.4
-Django==1.11.7
+Django==1.11.29
 django-ipware==2.0.2
 django-nvd3==0.9.7
 fanstatic==0.16
